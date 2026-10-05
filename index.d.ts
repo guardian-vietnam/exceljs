@@ -1832,6 +1832,10 @@ export interface TableColumnProperties {
 	  * Optional formula for custom functions
 	  */
 	totalsRowFormula?: string;
+	/**
+	  * Formula Excel applies to every cell of the column ("calculated column")
+	  */
+	calculatedColumnFormula?: string;
 }
 
 

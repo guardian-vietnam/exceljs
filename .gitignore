@@ -8,7 +8,7 @@ pids
 *.seed
 
 # Generated files
-dist/*
+# dist/ is committed on guardian/* branches: installs from git do not run a build.
 build/*
 
 # Test Output Folder

@@ -1,0 +1,31 @@
+{
+  "name": "Table1",
+  "displayName": "Table1",
+  "tableRef": "A7:C8",
+  "autoFilterRef": "A7:C8",
+  "totalsRow": false,
+  "headerRow": true,
+  "columns": [
+    {
+      "filterButton": false,
+      "name": "No.",
+      "calculatedColumnFormula": "ROW()-7"
+    },
+    {
+      "filterButton": false,
+      "name": "Promo Type"
+    },
+    {
+      "filterButton": false,
+      "name": "Sales Forecast Qty",
+      "calculatedColumnFormula": "IF(Table1[[#This Row],[Promo Type]]=\"BOGO\",1,0)"
+    }
+  ],
+  "style": {
+    "theme": "TableStyleLight1",
+    "showFirstColumn": false,
+    "showLastColumn": false,
+    "showRowStripes": true,
+    "showColumnStripes": false
+  }
+}

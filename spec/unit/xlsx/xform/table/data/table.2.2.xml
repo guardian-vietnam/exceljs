@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+       id="1" name="Table1" displayName="Table1" ref="A7:C8" totalsRowShown="0" headerRowCount="1">
+    <autoFilter ref="A7:C8">
+        <filterColumn colId="0" hiddenButton="1"/>
+        <filterColumn colId="1" hiddenButton="1"/>
+        <filterColumn colId="2" hiddenButton="1"/>
+    </autoFilter>
+    <tableColumns count="3">
+        <tableColumn id="1" name="No." dataDxfId="5"><calculatedColumnFormula>ROW()-7</calculatedColumnFormula></tableColumn>
+        <tableColumn id="2" name="Promo Type"/>
+        <tableColumn id="3" name="Sales Forecast Qty"><calculatedColumnFormula>IF(Table1[[#This Row],[Promo Type]]="BOGO",1,0)</calculatedColumnFormula></tableColumn>
+    </tableColumns>
+    <tableStyleInfo name="TableStyleLight1" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/>
+</table>

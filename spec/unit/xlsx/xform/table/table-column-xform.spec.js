@@ -23,6 +23,25 @@ const expectations = [
     parsedModel: {name: 'Foo', totalsRowFunction: 'Baz'},
     tests: ['render', 'renderIn', 'parse'],
   },
+  {
+    title: 'calculated column formula',
+    create() {
+      return new TableColumnXform();
+    },
+    preparedModel: {id: 1, name: 'No.', calculatedColumnFormula: 'ROW()-7'},
+    xml: '<tableColumn id="1" name="No."><calculatedColumnFormula>ROW()-7</calculatedColumnFormula></tableColumn>',
+    parsedModel: {name: 'No.', calculatedColumnFormula: 'ROW()-7'},
+    tests: ['render', 'renderIn', 'parse'],
+  },
+  {
+    title: 'unknown child elements',
+    create() {
+      return new TableColumnXform();
+    },
+    xml: '<tableColumn id="1" name="Foo"><xmlColumnPr mapId="1" xpath="/a/b"/><extLst><ext uri="x"><y/></ext></extLst></tableColumn>',
+    parsedModel: {name: 'Foo'},
+    tests: ['parse'],
+  },
 ];
 
 describe('TableColumnXform', () => {
