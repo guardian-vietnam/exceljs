@@ -15143,6 +15143,10 @@ class FilterColumnXform extends BaseXform {
     return true;
   }
   parseOpen(node) {
+    if (this.skipDepth) {
+      this.skipDepth++;
+      return true;
+    }
     if (this.parser) {
       this.parser.parseOpen(node);
       return true;
@@ -15155,6 +15159,7 @@ class FilterColumnXform extends BaseXform {
         this.model = {
           filterButton: attributes.hiddenButton === '0'
         };
+        this.skipDepth = 0;
         return true;
       default:
         this.parser = this.map[node.name];
@@ -15162,11 +15167,18 @@ class FilterColumnXform extends BaseXform {
           this.parseOpen(node);
           return true;
         }
-        throw new Error(`Unexpected xml node in parseOpen: ${JSON.stringify(node)}`);
+        // colorFilter, dynamicFilter, iconFilter, top10 and extLst are not modelled.
+        // Skip them (with their children) instead of failing the whole workbook load.
+        this.skipDepth = 1;
+        return true;
     }
   }
   parseText() {}
   parseClose(name) {
+    if (this.skipDepth) {
+      this.skipDepth--;
+      return true;
+    }
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
         this.parser = undefined;
