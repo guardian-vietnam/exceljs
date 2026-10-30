@@ -32,7 +32,7 @@ const inherits = function (cls, superCtor, statics, prototype) {
 };
 
 // eslint-disable-next-line no-control-regex
-const xmlDecodeRegex = /[<>&'"\x7F\x00-\x08\x0B-\x0C\x0E-\x1F]/;
+const xmlDecodeRegex = /[<>&'"\x7F\x00-\x08\x0B-\x0C\x0D\x0E-\x1F]/;
 const utils = {
   nop() {},
   promiseImmediate(value) {
@@ -100,6 +100,10 @@ const utils = {
           break;
         case 127:
           escape = '';
+          break;
+        case 13:
+          // \r: a raw CR is normalised away by XML parsers, so keep it as a character reference
+          escape = '&#xD;';
           break;
         default:
           {

@@ -1,6 +1,7 @@
 "use strict";
 
 const BaseXform = require('../base-xform');
+const colCache = require('../../../utils/col-cache');
 const utils = require('../../../utils/utils');
 const CellXform = require('./cell-xform');
 class RowXform extends BaseXform {
@@ -62,8 +63,11 @@ class RowXform extends BaseXform {
     if (node.name === 'row') {
       this.numRowsSeen += 1;
       const spans = node.attributes.spans ? node.attributes.spans.split(':').map(span => parseInt(span, 10)) : [undefined, undefined];
+      // r is optional: a row without it follows the previous row
+      const number = node.attributes.r ? parseInt(node.attributes.r, 10) : (this.lastRowNumber || 0) + 1;
+      this.lastRowNumber = number;
       const model = this.model = {
-        number: parseInt(node.attributes.r, 10),
+        number,
         min: spans[0],
         max: spans[1],
         cells: []
@@ -103,7 +107,14 @@ class RowXform extends BaseXform {
   parseClose(name) {
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
-        this.model.cells.push(this.parser.model);
+        const cell = this.parser.model;
+        if (!cell.address) {
+          // r is optional: a cell without it follows the previous cell of the row
+          const previous = this.model.cells[this.model.cells.length - 1];
+          const col = previous ? colCache.decodeAddress(previous.address).col + 1 : 1;
+          cell.address = colCache.encodeAddress(this.model.number, col);
+        }
+        this.model.cells.push(cell);
         if (this.maxItems && this.model.cells.length > this.maxItems) {
           throw new Error(`Max column count (${this.maxItems}) exceeded`);
         }

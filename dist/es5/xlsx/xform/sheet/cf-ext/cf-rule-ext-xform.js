@@ -7,6 +7,7 @@ const BaseXform = require('../../base-xform');
 const CompositeXform = require('../../composite-xform');
 const DatabarExtXform = require('./databar-ext-xform');
 const IconSetExtXform = require('./icon-set-ext-xform');
+const FExtXform = require('./f-ext-xform');
 const extIcons = {
   '3Triangles': true,
   '3Stars': true,
@@ -17,7 +18,8 @@ class CfRuleExtXform extends CompositeXform {
     super();
     this.map = {
       'x14:dataBar': this.databarXform = new DatabarExtXform(),
-      'x14:iconSet': this.iconSetXform = new IconSetExtXform()
+      'x14:iconSet': this.iconSetXform = new IconSetExtXform(),
+      'xm:f': new FExtXform()
     };
   }
   get tag() {
@@ -80,6 +82,11 @@ class CfRuleExtXform extends CompositeXform {
     };
   }
   onParserClose(name, parser) {
+    if (name === 'xm:f') {
+      this.model.formulae = this.model.formulae || [];
+      this.model.formulae.push(parser.model);
+      return;
+    }
     Object.assign(this.model, parser.model);
   }
 }

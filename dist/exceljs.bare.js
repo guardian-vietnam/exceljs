@@ -4570,6 +4570,7 @@ const {
 const {
   bufferToString
 } = require('./browser-buffer-decode');
+const SPREADSHEETML_MAIN = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 module.exports = async function* (iterable) {
   // TODO: Remove once node v8 is deprecated
   // Detect and upgrade old streams
@@ -4582,17 +4583,39 @@ module.exports = async function* (iterable) {
     error = err;
   });
   let events = [];
-  saxesParser.on('opentag', value => events.push({
-    eventType: 'opentag',
-    value
-  }));
+  // Some generators (OpenXML SDK) bind SpreadsheetML to a prefix: <x:worksheet xmlns:x="...main">.
+  // Strip that prefix so the xforms see the usual element names.
+  let mainPrefix;
+  const unprefix = value => {
+    if (mainPrefix && value.name.startsWith(mainPrefix)) {
+      // copy: saxes keeps the original tag object to match the closing tag
+      return Object.assign({}, value, {
+        name: value.name.slice(mainPrefix.length)
+      });
+    }
+    return value;
+  };
+  saxesParser.on('opentag', value => {
+    if (mainPrefix === undefined) {
+      mainPrefix = null;
+      Object.keys(value.attributes).forEach(key => {
+        if (key.startsWith('xmlns:') && value.attributes[key] === SPREADSHEETML_MAIN) {
+          mainPrefix = `${key.slice(6)}:`;
+        }
+      });
+    }
+    events.push({
+      eventType: 'opentag',
+      value: unprefix(value)
+    });
+  });
   saxesParser.on('text', value => events.push({
     eventType: 'text',
     value
   }));
   saxesParser.on('closetag', value => events.push({
     eventType: 'closetag',
-    value
+    value: unprefix(value)
   }));
   for await (const chunk of iterable) {
     saxesParser.write(bufferToString(chunk));
@@ -5278,7 +5301,7 @@ const inherits = function (cls, superCtor, statics, prototype) {
 };
 
 // eslint-disable-next-line no-control-regex
-const xmlDecodeRegex = /[<>&'"\x7F\x00-\x08\x0B-\x0C\x0E-\x1F]/;
+const xmlDecodeRegex = /[<>&'"\x7F\x00-\x08\x0B-\x0C\x0D\x0E-\x1F]/;
 const utils = {
   nop() {},
   promiseImmediate(value) {
@@ -5346,6 +5369,10 @@ const utils = {
           break;
         case 127:
           escape = '';
+          break;
+        case 13:
+          // \r: a raw CR is normalised away by XML parsers, so keep it as a character reference
+          escape = '&#xD;';
           break;
         default:
           {
@@ -9185,6 +9212,7 @@ const BaseXform = require('../../base-xform');
 const CompositeXform = require('../../composite-xform');
 const DatabarExtXform = require('./databar-ext-xform');
 const IconSetExtXform = require('./icon-set-ext-xform');
+const FExtXform = require('./f-ext-xform');
 const extIcons = {
   '3Triangles': true,
   '3Stars': true,
@@ -9195,7 +9223,8 @@ class CfRuleExtXform extends CompositeXform {
     super();
     this.map = {
       'x14:dataBar': this.databarXform = new DatabarExtXform(),
-      'x14:iconSet': this.iconSetXform = new IconSetExtXform()
+      'x14:iconSet': this.iconSetXform = new IconSetExtXform(),
+      'xm:f': new FExtXform()
     };
   }
   get tag() {
@@ -9258,12 +9287,17 @@ class CfRuleExtXform extends CompositeXform {
     };
   }
   onParserClose(name, parser) {
+    if (name === 'xm:f') {
+      this.model.formulae = this.model.formulae || [];
+      this.model.formulae.push(parser.model);
+      return;
+    }
     Object.assign(this.model, parser.model);
   }
 }
 module.exports = CfRuleExtXform;
 
-},{"../../base-xform":32,"../../composite-xform":48,"./databar-ext-xform":79,"./icon-set-ext-xform":81,"uuid":442}],76:[function(require,module,exports){
+},{"../../base-xform":32,"../../composite-xform":48,"./databar-ext-xform":79,"./f-ext-xform":80,"./icon-set-ext-xform":81,"uuid":442}],76:[function(require,module,exports){
 "use strict";
 
 const CompositeXform = require('../../composite-xform');
@@ -9750,7 +9784,7 @@ class CfRuleXform extends CompositeXform {
       priority: model.priority,
       operator: model.operator
     });
-    model.formulae.forEach(formula => {
+    (model.formulae || []).forEach(formula => {
       this.formulaXform.render(xmlStream, formula);
     });
     xmlStream.closeNode();
@@ -11309,6 +11343,7 @@ module.exports = RowBreaksXform;
 "use strict";
 
 const BaseXform = require('../base-xform');
+const colCache = require('../../../utils/col-cache');
 const utils = require('../../../utils/utils');
 const CellXform = require('./cell-xform');
 class RowXform extends BaseXform {
@@ -11370,8 +11405,11 @@ class RowXform extends BaseXform {
     if (node.name === 'row') {
       this.numRowsSeen += 1;
       const spans = node.attributes.spans ? node.attributes.spans.split(':').map(span => parseInt(span, 10)) : [undefined, undefined];
+      // r is optional: a row without it follows the previous row
+      const number = node.attributes.r ? parseInt(node.attributes.r, 10) : (this.lastRowNumber || 0) + 1;
+      this.lastRowNumber = number;
       const model = this.model = {
-        number: parseInt(node.attributes.r, 10),
+        number,
         min: spans[0],
         max: spans[1],
         cells: []
@@ -11411,7 +11449,14 @@ class RowXform extends BaseXform {
   parseClose(name) {
     if (this.parser) {
       if (!this.parser.parseClose(name)) {
-        this.model.cells.push(this.parser.model);
+        const cell = this.parser.model;
+        if (!cell.address) {
+          // r is optional: a cell without it follows the previous cell of the row
+          const previous = this.model.cells[this.model.cells.length - 1];
+          const col = previous ? colCache.decodeAddress(previous.address).col + 1 : 1;
+          cell.address = colCache.encodeAddress(this.model.number, col);
+        }
+        this.model.cells.push(cell);
         if (this.maxItems && this.model.cells.length > this.maxItems) {
           throw new Error(`Max column count (${this.maxItems}) exceeded`);
         }
@@ -11434,7 +11479,7 @@ class RowXform extends BaseXform {
 }
 module.exports = RowXform;
 
-},{"../../../utils/utils":27,"../base-xform":32,"./cell-xform":73}],110:[function(require,module,exports){
+},{"../../../utils/col-cache":19,"../../../utils/utils":27,"../base-xform":32,"./cell-xform":73}],110:[function(require,module,exports){
 "use strict";
 
 const _ = require('../../../utils/under-dash');
@@ -12310,6 +12355,10 @@ class WorkSheetXform extends BaseXform {
     // options.merges = new Merges();
     // options.merges.reconcile(model.mergeCells, model.rows);
     const rels = (model.relationships || []).reduce((h, rel) => {
+      // openpyxl and others write package-absolute targets (/xl/tables/table1.xml)
+      if (rel.TargetMode !== 'External' && rel.Target && rel.Target.startsWith('/xl/')) {
+        rel.Target = `../${rel.Target.slice(4)}`;
+      }
       h[rel.Id] = rel;
       if (rel.Type === RelType.Comments) {
         model.comments = options.comments[rel.Target].comments;
@@ -12377,8 +12426,8 @@ class WorkSheetXform extends BaseXform {
     }
     model.tables = (model.tables || []).map(tablePart => {
       const rel = rels[tablePart.rId];
-      return options.tables[rel.Target];
-    });
+      return rel && options.tables[rel.Target];
+    }).filter(Boolean);
     delete model.relationships;
     delete model.hyperlinks;
     delete model.comments;
@@ -15281,6 +15330,10 @@ class TableStyleInfoXform extends BaseXform {
     return 'tableStyleInfo';
   }
   render(xmlStream, model) {
+    // tableStyleInfo is optional (openpyxl leaves it out)
+    if (!model) {
+      return false;
+    }
     xmlStream.leafNode(this.tag, {
       name: model.theme ? model.theme : undefined,
       showFirstColumn: model.showFirstColumn ? '1' : '0',

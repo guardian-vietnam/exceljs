@@ -6,6 +6,10 @@ class TableStyleInfoXform extends BaseXform {
     return 'tableStyleInfo';
   }
   render(xmlStream, model) {
+    // tableStyleInfo is optional (openpyxl leaves it out)
+    if (!model) {
+      return false;
+    }
     xmlStream.leafNode(this.tag, {
       name: model.theme ? model.theme : undefined,
       showFirstColumn: model.showFirstColumn ? '1' : '0',

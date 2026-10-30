@@ -161,7 +161,7 @@ class CfRuleXform extends CompositeXform {
       priority: model.priority,
       operator: model.operator
     });
-    model.formulae.forEach(formula => {
+    (model.formulae || []).forEach(formula => {
       this.formulaXform.render(xmlStream, formula);
     });
     xmlStream.closeNode();
