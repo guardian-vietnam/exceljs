@@ -1,0 +1,29 @@
+{
+  "name": "Table1",
+  "displayName": "Table1",
+  "tableRef": "A7:C253",
+  "autoFilterRef": "A7:C253",
+  "totalsRow": false,
+  "headerRow": true,
+  "columns": [
+    {
+      "filterButton": false,
+      "name": "Store"
+    },
+    {
+      "filterButton": false,
+      "name": "Item"
+    },
+    {
+      "filterButton": false,
+      "name": "Uploaded By"
+    }
+  ],
+  "style": {
+    "theme": "TableStyleLight1",
+    "showFirstColumn": false,
+    "showLastColumn": false,
+    "showRowStripes": true,
+    "showColumnStripes": false
+  }
+}

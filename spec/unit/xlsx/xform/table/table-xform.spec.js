@@ -26,6 +26,16 @@ const expectations = [
     parsedModel: require('./data/table.2.3.json'),
     tests: ['parse'],
   },
+  {
+    title: 'unsupported column filters',
+    create() {
+      return new TableXform();
+    },
+    initialModel: null,
+    xml: fs.readFileSync(`${__dirname}/data/table.3.2.xml`).toString(),
+    parsedModel: require('./data/table.3.3.json'),
+    tests: ['parse'],
+  },
 ];
 
 describe('TableXform', () => {

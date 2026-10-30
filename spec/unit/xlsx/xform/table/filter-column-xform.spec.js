@@ -42,13 +42,30 @@ const expectations = [
       filterButton: false,
       customFilters: [{val: '*brandywine*'}],
     },
-    xml:
-      '<filterColumn colId="0" hiddenButton="1"><customFilters><customFilter val="*brandywine*"/></customFilters></filterColumn>',
+    xml: '<filterColumn colId="0" hiddenButton="1"><customFilters><customFilter val="*brandywine*"/></customFilters></filterColumn>',
     get parsedModel() {
       return this.initialModel;
     },
     tests: ['prepare', 'render', 'renderIn', 'parse'],
     options: {index: 0},
+  },
+  {
+    title: 'with color filter',
+    create() {
+      return new FilterColumnXform();
+    },
+    xml: '<filterColumn colId="52"><colorFilter dxfId="153"/></filterColumn>',
+    parsedModel: {filterButton: false},
+    tests: ['parse'],
+  },
+  {
+    title: 'with nested unsupported filter',
+    create() {
+      return new FilterColumnXform();
+    },
+    xml: '<filterColumn colId="0" hiddenButton="0"><extLst><ext uri="{0}"><filter val="x"/></ext></extLst></filterColumn>',
+    parsedModel: {filterButton: true},
+    tests: ['parse'],
   },
 ];
 

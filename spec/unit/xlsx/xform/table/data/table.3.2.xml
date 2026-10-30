@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"
+       id="2" name="Table1" displayName="Table1" ref="A7:C253" totalsRowShown="0" headerRowCount="1">
+    <autoFilter ref="A7:C253">
+        <filterColumn colId="0"><dynamicFilter type="today"/></filterColumn>
+        <filterColumn colId="1"><extLst><ext uri="{0}"><filter val="x"/></ext></extLst></filterColumn>
+        <filterColumn colId="2"><colorFilter dxfId="153"/></filterColumn>
+    </autoFilter>
+    <tableColumns count="3">
+        <tableColumn id="1" name="Store"/>
+        <tableColumn id="2" name="Item"/>
+        <tableColumn id="3" name="Uploaded By"/>
+    </tableColumns>
+    <tableStyleInfo name="TableStyleLight1" showFirstColumn="0" showLastColumn="0" showRowStripes="1" showColumnStripes="0"/>
+</table>
