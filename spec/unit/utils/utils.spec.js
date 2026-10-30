@@ -22,6 +22,7 @@ describe('utils', () => {
       );
 
       expect(utils.xmlEncode('new\x0aline')).to.equal('new\x0aline');
+      expect(utils.xmlEncode('new\x0d\x0aline')).to.equal('new&#xD;\x0aline');
     });
   });
   describe('isDateFmt', () => {
